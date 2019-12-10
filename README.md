@@ -1,4 +1,4 @@
-# breathnix
+# food-app
 
 ## Project setup
 ```
