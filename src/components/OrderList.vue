@@ -5,7 +5,7 @@
     hide-default-footer
     dense
     item-key="id"
-    group-by="purchaseId"
+    group-by="orderId"
     class="elevation-1"
   >
     <!-- <template #group.header="props">
@@ -35,10 +35,9 @@
   </v-data-table>
 </template>
 
-
 <script>
 export default {
-  name: "ItemList",
+  name: "OrderList",
   data() {
     return {
       headers: [
@@ -59,7 +58,7 @@ export default {
           value: false,
           name: "Orange Juice",
           id: "000",
-          purchaseId: "001",
+          orderId: "001",
           calories: 262,
           fat: 16.0,
           carbs: 23,
@@ -70,7 +69,7 @@ export default {
           value: false,
           name: "Larabar",
           id: "001",
-          purchaseId: "001",
+          orderId: "001",
           calories: 408,
           fat: 3.2,
           carbs: 87,
@@ -81,7 +80,7 @@ export default {
           value: false,
           name: "Donut",
           id: "002",
-          purchaseId: "001",
+          orderId: "001",
           calories: 452,
           fat: 25.0,
           carbs: 51,
@@ -93,7 +92,7 @@ export default {
           value: false,
           name: "Bagel",
           id: "003",
-          purchaseId: "002",
+          orderId: "002",
           calories: 999,
           fat: 28.0,
           carbs: 151,
@@ -104,7 +103,7 @@ export default {
           value: false,
           name: "KitKat",
           id: "004",
-          purchaseId: "002",
+          orderId: "002",
           calories: 518,
           fat: 26.0,
           carbs: 65,
@@ -115,7 +114,7 @@ export default {
           value: false,
           name: "Orange Juice",
           id: "005",
-          purchaseId: "002",
+          orderId: "002",
           calories: 262,
           fat: 16.0,
           carbs: 23,
@@ -126,7 +125,7 @@ export default {
           value: false,
           name: "Larabar",
           id: "006",
-          purchaseId: "003",
+          orderId: "003",
           calories: 408,
           fat: 3.2,
           carbs: 87,
@@ -137,7 +136,7 @@ export default {
           value: false,
           name: "Donut",
           id: "007",
-          purchaseId: "004",
+          orderId: "004",
           calories: 452,
           fat: 25.0,
           carbs: 51,
@@ -149,7 +148,7 @@ export default {
           value: false,
           name: "Bagel",
           id: "008",
-          purchaseId: "004",
+          orderId: "004",
           calories: 999,
           fat: 28.0,
           carbs: 151,
@@ -160,7 +159,7 @@ export default {
           value: false,
           name: "KitKat",
           id: "009",
-          purchaseId: "005",
+          orderId: "005",
           calories: 518,
           fat: 26.0,
           carbs: 65,

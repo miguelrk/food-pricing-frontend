@@ -2,6 +2,7 @@
 import { firebase } from "@firebase/app";
 // Add additional services to be used
 import "@firebase/firestore";
+import "@firebase/storage";
 
 const firebaseApp = firebase.initializeApp({
   apiKey: "AIzaSyCCL8LNWfr2Ri2wSOV8rjlbxZ4S1SWRWco",
@@ -21,6 +22,7 @@ export { TimeStamp, GeoPoint };
 
 // Firebase utilities
 const database = firebaseApp.firestore();
+const storage = firebase.storage();
 
 database.enablePersistence({ synchronizeTabs: true }).catch(error => {
   if (error.code == "failed-precondition") {
@@ -35,4 +37,4 @@ database.enablePersistence({ synchronizeTabs: true }).catch(error => {
 });
 // Subsequent queries will use persistence, if it was enabled successfully
 
-export { database };
+export { database, storage };

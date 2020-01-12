@@ -8,6 +8,12 @@ import vuetify from "./plugins/vuetify";
 
 Vue.use(firestorePlugin);
 
+import VueMobileDetection from "vue-mobile-detection";
+Vue.use(VueMobileDetection);
+
+import VueOnlineProp from "vue-online-prop";
+Vue.use(VueOnlineProp);
+
 Vue.config.productionTip = false;
 
 new Vue({

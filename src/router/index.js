@@ -7,18 +7,18 @@ Vue.use(VueRouter);
 const routes = [
   {
     path: "/",
-    name: "home",
+    name: "Home",
     component: Home
   },
   {
-    path: "/record",
-    name: "record",
+    path: "/orders",
+    name: "Orders",
     component: () =>
-      import(/* webpackChunkName: "record" */ "../views/Record.vue")
+      import(/* webpackChunkName: "prediction" */ "../views/Orders.vue")
   },
   {
     path: "/menu",
-    name: "menu",
+    name: "Menu",
     component: () => import(/* webpackChunkName: "menu" */ "../views/Menu.vue")
   }
 ];
