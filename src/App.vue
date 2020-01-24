@@ -6,9 +6,7 @@
           <v-icon large dark>mdi-food</v-icon>
         </v-avatar>
 
-        <v-toolbar-title v-if="$vuetify.breakpoint.smAndUp" class="ml-3"
-          >Food App</v-toolbar-title
-        >
+        <v-toolbar-title v-if="$vuetify.breakpoint.smAndUp" class="ml-3">Food App</v-toolbar-title>
       </div>
 
       <v-spacer></v-spacer>
@@ -20,34 +18,31 @@
             'without-padding': $isMobile() || $vuetify.breakpoint.smAndDown
           }"
         >
-          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp"
-            >Home</template
-          >
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Home</template>
           <template v-else>
             <v-icon>mdi-home</v-icon>
           </template>
         </v-tab>
         <v-tab @click="$router.push('/orders')">
-          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp"
-            >Orders</template
-          >
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Orders</template>
           <template v-else>
             <v-icon>mdi-receipt</v-icon>
           </template>
         </v-tab>
         <v-tab @click="$router.push('/menu')">
-          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp"
-            >Menu</template
-          >
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Menu</template>
           <template v-else>
             <v-icon>mdi-menu</v-icon>
           </template>
         </v-tab>
       </v-tabs>
+
       <v-btn icon @click="toggleFullscreen()">
-        <v-icon>{{
+        <v-icon>
+          {{
           fullscreen ? "mdi-fullscreen-exit" : "mdi-fullscreen"
-        }}</v-icon>
+          }}
+        </v-icon>
       </v-btn>
       <v-toolbar-items>
         <v-dialog v-model="dialog" width="500">
@@ -59,7 +54,7 @@
 
           <v-card>
             <form>
-              <v-card-title primary-title>Privacy Policy</v-card-title>
+              <v-card-title primary-title>Settings</v-card-title>
 
               <v-card-text>
                 <v-text-field
@@ -70,8 +65,8 @@
                   dense
                 ></v-text-field>
                 <v-text-field
-                  v-model="proxyHostProvisional"
-                  label="Proxy Host"
+                  v-model="cameraStreamHostProvisional"
+                  label="Camera Stream Host"
                   required
                   outlined
                   dense
@@ -83,12 +78,7 @@
               <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn text @click="dialog = false">close</v-btn>
-                <v-btn
-                  class="mr-4"
-                  text
-                  color="primary"
-                  @click="submitChanges()"
-                >
+                <v-btn class="mr-4" text color="primary" @click="submitChanges()">
                   <v-icon left>mdi-content-save-edit</v-icon>save
                 </v-btn>
               </v-card-actions>
@@ -102,8 +92,8 @@
       <router-view
         width="100%"
         :class="{
-          'with-padding': !$isMobile() || $vuetify.breakpoint.mdAndUp,
-          'without-padding': $isMobile() || $vuetify.breakpoint.smAndDown
+          'with-padding': !$isMobile() || $vuetify.breakpoint.lgAndUp,
+          'without-padding': $isMobile() || $vuetify.breakpoint.mdAndDown
         }"
       ></router-view>
     </v-content>
@@ -120,6 +110,7 @@
 
 <script>
 import { mapState } from "vuex";
+import { database } from "@/firebase.js";
 import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
 import FullscreenMixin from "@/mixins/FullscreenMixin.vue";
 import AppNotification from "@/components/AppNotification";
@@ -136,40 +127,24 @@ export default {
     return {
       dialog: false,
       deviceHostProvisional: "",
-      proxyHostProvisional: ""
+      cameraStreamHostProvisional: ""
     };
   },
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      proxyHost: state => state.proxyHost,
-      deviceHost: state => state.deviceHost,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
   },
-  mounted() {
-    this.deviceHostProvisional = this.deviceHost;
-    this.proxyHostProvisional = this.proxyHost;
-  },
   watch: {
-    // deviceHost: {
-    //   immediate: true,
-    //   handler(newVal) {
-    //     if (newVal) {
-    //       console.log(newVal);
-    //       this.deviceHostProvisional = newVal;
-    //     }
-    //   }
-    // },
-    // proxyHost: {
-    //   immediate: true,
-    //   handler(newVal) {
-    //     if (newVal) {
-    //       console.log(newVal);
-    //       this.proxyHostProvisional = newVal;
-    //     }
-    //   }
-    // },
+    settings: {
+      immediate: true,
+      handler(newVal) {
+        this.deviceHostProvisional = newVal.deviceHost;
+        this.cameraStreamHostProvisional = newVal.cameraStreamHost;
+        console.log("Updated settings:", newVal);
+      }
+    },
     $online: {
       // fires notification when vue-offline-prop detects offline state
       immediate: true,
@@ -191,24 +166,26 @@ export default {
   methods: {
     submitChanges() {
       this.dialog = false;
-      this.$store.commit("SET", {
-        prop: "deviceHost",
-        value: this.deviceHostProvisional
-      });
-      this.$store.commit("SET", {
-        prop: "deviceHost",
-        value: this.proxyHostProvisional
-      });
-      this.$store.commit("FIRE_NOTIFICATION", {
-        text: "Updated settings successfully",
-        type: "success"
-      });
+
+      const collectionRefSettings = database.collection("settings");
+
+      const data = {
+        deviceHost: this.deviceHostProvisional,
+        cameraStreamHost: this.cameraStreamHostProvisional
+      };
+
+      this.updateDoc(collectionRefSettings, "PwmSaP1FUxeigoq4xKte", data);
     }
   }
 };
 </script>
 
 <style>
+html,
+body {
+  overflow-y: auto !important;
+}
+
 .app-view {
   height: 100%;
 }
@@ -222,7 +199,7 @@ export default {
 }
 
 .without-padding {
-  padding: 24px 0px;
+  padding: 0px;
 }
 
 .without-padding.v-tab {

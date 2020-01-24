@@ -5,12 +5,18 @@ import { database } from "@/firebase.js";
 export default {
   data() {
     return {
-      predictions: []
+      predictions: [],
+      orders: [],
+      purchases: [],
+      settings: {}
     };
   },
 
   firestore: {
-    predictions: database.collection("predictions")
+    predictions: database.collection("predictions"),
+    orders: database.collection("orders"),
+    purchases: database.collection("purchases"),
+    settings: database.collection("settings").doc("PwmSaP1FUxeigoq4xKte")
   },
   methods: {
     ////////// Used by DashboardForm, GatewayForm, DatasourceForm, etc  //////////

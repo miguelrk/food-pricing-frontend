@@ -1,6 +1,6 @@
 <template>
   <div class="app-view">
-    <h1>Orders</h1>
+    <h1 class="hidden-md-and-down">Orders</h1>
     <order-list></order-list>
   </div>
 </template>
@@ -18,8 +18,6 @@ export default {
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      proxyHost: state => state.notifications,
-      deviceHost: state => state.deviceHost,
       menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
@@ -29,10 +27,5 @@ export default {
       console.log(newVal);
     }
   }
-  // mounted() {
-  //   console.log(
-  //     `${this.proxyHost}http://${this.$store.state.ipAddress}/prediction`
-  //   );
-  // }
 };
 </script>

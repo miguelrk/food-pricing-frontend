@@ -1,12 +1,12 @@
 <template>
   <div class="app-view">
-    <h1>Menu</h1>
+    <h1 class="hidden-md-and-down">Menu</h1>
     <v-container fluid>
       <v-row align="center" dense>
         <!-- GRID VIEW FOR LARGE SCREENS -->
         <v-col
-          v-for="item in menuItems"
-          :key="item.title"
+          v-for="(item, i) in predictions"
+          :key="`v-col-${i}`"
           :cols="
             $vuetify.breakpoint.smAndDown
               ? 6
@@ -24,33 +24,25 @@
                   <span class="font-weight-bold">{{ item.class }}</span>
                 </v-list-item-title>
               </v-list-item-content>
-              <v-list-item-action-text>
-                {{ item.price }} EUR
-              </v-list-item-action-text>
+              <v-list-item-action-text>{{ item.price }} EUR</v-list-item-action-text>
             </v-list-item>
             <v-hover>
               <template #default="{ hover }">
                 <div class="pa-2">
                   <v-img
-                    :src="item.imageURL"
-                    :alt="`Asterisc widget ${item.name}`"
+                    :src="imageURLs[i]"
+                    :alt="`${item.class}-${item.id}`"
                     height="194"
-                    :key="`widget-img-${item.id}`"
+                    :key="`v-img-${i}`"
                   >
                     <v-fade-transition>
-                      <v-overlay
-                        v-if="hover"
-                        absolute
-                        color="primary"
-                        opacity="0.40"
-                      >
+                      <v-overlay v-if="hover" absolute color="primary" opacity="0.40">
                         <v-btn
                           color="primary"
                           depressed
-                          :key="`widget-dialog-btn-${item.id}`"
-                          @click="updateClass(item)"
-                          >Select</v-btn
-                        >
+                          :key="`dialog-btn-${item.id}`"
+                          @click="openAlert(item)"
+                        >View Metadata</v-btn>
                       </v-overlay>
                     </v-fade-transition>
                   </v-img>
@@ -60,27 +52,6 @@
           </v-card>
         </v-col>
       </v-row>
-      <!-- <v-row>
-        <v-col v-for="n in 9" :key="n" class="d-flex child-flex" cols="4">
-          <v-card flat tile class="d-flex">
-            <v-img
-              :src="`https://picsum.photos/500/300?image=${n * 5 + 10}`"
-              :lazy-src="`https://picsum.photos/10/6?image=${n * 5 + 10}`"
-              aspect-ratio="1"
-              class="grey lighten-2"
-            >
-              <template v-slot:placeholder>
-                <v-row class="fill-height ma-0" align="center" justify="center">
-                  <v-progress-circular
-                    indeterminate
-                    color="grey lighten-5"
-                  ></v-progress-circular>
-                </v-row>
-              </template>
-            </v-img>
-          </v-card>
-        </v-col>
-      </v-row> -->
     </v-container>
   </div>
 </template>
@@ -88,18 +59,80 @@
 <script>
 import { mapState } from "vuex";
 import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
+import { storage } from "@/firebase.js";
 
 export default {
   name: "Menu",
   mixins: [DatabaseMixin],
+  data() {
+    return {
+      imageURLs: []
+    };
+  },
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      proxyHost: state => state.notifications,
-      deviceHost: state => state.deviceHost,
       menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
+  },
+  mounted() {
+    const predictionsRef = storage.ref("/predictions");
+    // Find all the prefixes and items.
+    this.getImageUrls(predictionsRef);
+  },
+  methods: {
+    openAlert(item) {
+      alert(JSON.stringify(item, null, 4));
+    },
+    getImageUrls(folderRef) {
+      folderRef
+        .listAll()
+        .then(res => {
+          res.items.forEach(itemRef => {
+            // All the items under listRef.
+            // console.log("itemRef:", itemRef);
+            itemRef
+              .getDownloadURL()
+              .then(url => {
+                // console.log("url:", url);
+                this.imageURLs.push(url);
+              })
+              .catch(error => {
+                // A full list of error codes is available at
+                // https://firebase.google.com/docs/storage/web/handle-errors
+                switch (error.code) {
+                  case "storage/object-not-found":
+                    console.error("File doesn't exist", error);
+                    break;
+
+                  case "storage/unauthorized":
+                    console.error(
+                      "User doesn't have permission to access the object",
+                      error
+                    );
+                    break;
+
+                  case "storage/reseted":
+                    console.error("User reseted the upload", error);
+                    break;
+
+                  case "storage/unknown":
+                    console.error(
+                      "Unknown error occurred, inspect the server response",
+                      error
+                    );
+                    break;
+                }
+              });
+          });
+        })
+        .catch(error => {
+          // Uh-oh, an error occurred!
+          console.error(error);
+        })
+        .finally(() => console.log(this.imageURLs));
+    }
   }
 };
 </script>

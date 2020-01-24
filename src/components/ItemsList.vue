@@ -1,5 +1,16 @@
 <template>
   <v-list two-line class="fill-height pa-0">
+    <v-toolbar transparent flat>
+      <v-spacer></v-spacer>
+      <v-toolbar-items v-if="Boolean(selected.length)">
+        <v-btn text icon @click.stop="cloneItems(selected)">
+          <v-icon>mdi-content-copy</v-icon>
+        </v-btn>
+        <v-btn text icon @click.stop="deleteItems(selected)">
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
+      </v-toolbar-items>
+    </v-toolbar>
     <template v-if="itemsInCurrentOrder.length">
       <template v-for="(item, i) in itemsInCurrentOrder">
         <v-list-item
@@ -9,7 +20,7 @@
             'app-list-row__active': $route.params.id === item.id
           }"
           :key="`v-list-item-${i}`"
-          @click="() => pass"
+          @click.stop="addOrRemove(item)"
         >
           <v-list-item-avatar>
             <template v-if="isSelected(item.id)">
@@ -23,15 +34,8 @@
               </v-avatar>
             </template>
             <template v-else>
-              <v-avatar
-                class="list-avatar"
-                size="40px"
-                @click.stop="addOrRemove(item)"
-              >
-                <img
-                  :src="`https://picsum.photos/500/300?image=${i}`"
-                  :alt="item.id"
-                />
+              <v-avatar class="list-avatar" size="40px" @click.stop="addOrRemove(item)">
+                <img :src="`https://picsum.photos/500/300?image=${i}`" :alt="item.id" />
                 <!-- <img :src="getImageURL(filenames[i])" :alt="item.id" /> -->
               </v-avatar>
             </template>
@@ -45,20 +49,19 @@
             <v-col
               v-if="$vuetify.breakpoint.mdAndUp"
               class="text-right mr-5 pr-5"
-              >{{ getItemPrice(item.class) }}</v-col
-            >
+            >{{ getItemPrice(item.class) }}</v-col>
           </v-row>
 
-          <v-list-item-action class="app-list-actions justify-center">
+          <!-- <v-list-item-action class="app-list-actions justify-center">
             <v-row>
-              <!-- <v-btn text icon>
+              <v-btn text icon>
                 <v-icon>mdi-content-copy</v-icon>
-              </v-btn> -->
-              <v-btn text icon @click.stop="deleteDocs([item])">
+              </v-btn>
+              <v-btn text icon @click.stop="deleteItem(item)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-row>
-          </v-list-item-action>
+          </v-list-item-action>-->
         </v-list-item>
         <v-divider :key="`v-divider-${i}`"></v-divider>
       </template>
@@ -95,20 +98,18 @@
       <v-card v-if="selected.length">
         <v-card-title class="headline">
           {{
-            `Are you sure you want to delete ${
-              selected.length === 1
-                ? " " + selected[0].class
-                : `${selected.length} items`
-            }?`
+          `Are you sure you want to delete ${
+          selected.length === 1
+          ? " " + selected[0].class
+          : `${selected.length} items`
+          }?`
           }}
         </v-card-title>
-        <v-card-text
-          >This action is irreversible. All settings will be lost.</v-card-text
-        >
+        <v-card-text>This action is irreversible. All settings will be lost.</v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" text @click="deleteDocs(selected)">Delete</v-btn>
+          <v-btn color="error" text @click="deleteItems(selected)">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -140,11 +141,19 @@ export default {
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      proxyHost: state => state.notifications,
-      deviceHost: state => state.deviceHost,
-      menuItems: state => state.menuItems,
-      itemsInCurrentOrder: state => state.itemsInCurrentOrder
+      menuItems: state => state.menuItems
     }),
+    itemsInCurrentOrder: {
+      get() {
+        return this.$store.state.itemsInCurrentOrder;
+      },
+      set(value) {
+        this.$store.commit("SET", {
+          prop: "itemsInCurrentOrder",
+          value: value
+        });
+      }
+    },
     items() {
       return this.predictions;
     },
@@ -199,21 +208,41 @@ export default {
         this.selected.splice(index, 1);
       }
     },
-    cloneDocs(selected) {
-      selected.forEach(doc => {
-        this.cloneDoc(this.collectionRef, doc); // from firestoreMixin.js
+    cloneItems(selected) {
+      selected.forEach(async item => {
+        let clone = { ...item }; // clones item instead of creating reference
+        clone.id = this.getUID();
+        this.cloneItem(clone);
       });
       this.selected = [];
     },
-    deleteDocs(selected) {
-      selected.forEach(doc => {
-        this.deleteDocById(this.collectionRef, doc.id); // from firestoreMixin.js
+    cloneItem(clone) {
+      this.$store.commit("ADD", {
+        prop: "itemsInCurrentOrder",
+        value: clone
       });
+    },
+    deleteItems(selected) {
+      selected.forEach(item => this.deleteItem(item));
+    },
+    deleteItem(item) {
+      console.log(item);
+      this.itemsInCurrentOrder = this.itemsInCurrentOrder.filter(
+        itemInOrder => itemInOrder !== item
+      );
       this.deleteDialog = false;
       this.selected = [];
     },
     openDialog(type, data = null) {
       this.$store.commit("OPEN_DIALOG", { type: type, data: data });
+    },
+    getUID() {
+      return (
+        "_" +
+        Math.random()
+          .toString(36)
+          .substr(2, 9)
+      );
     }
   }
 };

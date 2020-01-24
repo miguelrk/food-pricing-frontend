@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.4c6dd48cf923c946d13eec70fd81f485.js"
+  "/precache-manifest.1d4563a5ee0519ec5ebbbefb376c7d2c.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "food-app"});
