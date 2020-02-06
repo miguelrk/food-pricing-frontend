@@ -14,6 +14,7 @@
         >Payment</v-stepper-step>
       </v-stepper-header>
       <v-stepper-items>
+        <!-- STEP 1 ---------------------------------------------------------------->
         <v-stepper-content step="1">
           <v-card flat class="mb-12">
             <!-- CAMERA STREAM -->
@@ -24,13 +25,13 @@
               </v-card-title>
               <v-card-subtitle>Place food item below camera and wait to be scanned</v-card-subtitle>
               <v-card-text>
-                <v-row justify="center" align="center">
+                <v-row justify="center" align="center" class="fill-height">
                   <!-- <v-img
                     src="https://miro.medium.com/max/1280/1*3lAxV0t43t9KFf0q4EJXNA.gif"
                     contain
                     height="400px"
                   ></v-img>-->
-                  <iframe frameborder="0" :src="settings.cameraStreamHost"></iframe>
+                  <img id="camera-stream" :src="settings.cameraStreamHost" />
                 </v-row>
               </v-card-text>
             </template>
@@ -61,13 +62,8 @@
                   algorithms
                 </v-card-subtitle>
                 <v-card-text>
-                  <v-row justify="center" align="center">
-                    <v-img
-                      v-if="prediction.imageURL"
-                      :src="prediction.imageURL"
-                      contain
-                      height="400px"
-                    ></v-img>
+                  <v-row justify="center" align="center" class="fill-height">
+                    <img id="prediction-image" />
                   </v-row>
                 </v-card-text>
               </template>
@@ -170,7 +166,7 @@
             </v-card-actions>
           </v-card>
         </v-stepper-content>
-
+        <!-- STEP 2 ----------------------------------------------------------->
         <v-stepper-content step="2">
           <v-card flat class="mb-12">
             <v-card-title>
@@ -196,7 +192,7 @@
             </v-card-actions>
           </v-card>
         </v-stepper-content>
-
+        <!-- STEP 3 ------------------------------------------------------------>
         <v-stepper-content step="3">
           <v-card flat class="mb-12">
             <v-card-title large>
@@ -225,9 +221,10 @@
                     justify-space-between
                   >
                     <v-col>{{ item.class }}</v-col>
-                    <v-col style="text-align:right;">{{ item.price }}</v-col>
+                    <v-col style="text-align:right;">{{ item.price * item.weight }}</v-col>
                   </v-row>
                   <br />
+                  <v-divider></v-divider>
                   <p class="subheader text--primary strong" style="text-align:right;">TOTAL</p>
                   <p
                     class="display-1 text--primary"
@@ -246,6 +243,7 @@
             </v-card-actions>
           </v-card>
         </v-stepper-content>
+        <!--------------------------------------------------------------------->
       </v-stepper-items>
     </v-stepper>
   </div>
@@ -268,6 +266,7 @@ export default {
       state: "init",
       imageURLs: [],
       correctionDialog: false,
+      orderId: "",
       prediction: {
         id: "",
         class: "",
@@ -290,6 +289,7 @@ export default {
   mounted() {
     // Find all the prefixes and items.
     this.getImageUrls(this.predictionsRef);
+    this.orderId = this.getUID();
   },
   methods: {
     makePrediction() {
@@ -304,18 +304,22 @@ export default {
       this.getPrediction(url)
         .then(data => {
           this.prediction = data;
+          this.prediction.weightedPrice = data.weight * data.price;
           console.log(this.prediction);
         })
         .finally(() => {
           this.state = "feedback";
-          this.getImageUrls(this.predictionsRef).then(
-            (this.prediction.imageURL = this.imageURLs[-1])
-          );
+          this.getImageURL(`${this.prediction.id}.png`);
         });
     },
     async getPrediction(url) {
       try {
-        let response = await fetch(url);
+        let response = await fetch(url, {
+          mode: "no-cors",
+          headers: {
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
         return response.json();
       } catch (error) {
         console.error(error);
@@ -325,6 +329,24 @@ export default {
         });
       }
     },
+    getImageURL(filename) {
+      console.log("GET image:", filename);
+      this.predictionsRef
+        .child("0144b84e-f26f-447d-b834-39744383c67f.jpg")
+        .getDownloadURL()
+        .then(url => {
+          this.prediction.imageURL = url;
+          document.getElementById("prediction-image").src = url;
+          return url;
+        })
+        .catch(error => {
+          console.error(error);
+          document.getElementById(
+            "prediction-image"
+          ).src = this.settings.cameraStreamHost;
+          return this.settings.cameraStreamHost;
+        });
+    },
     // getImageURLOfPrediction(urls) {
     //   const url = urls.find(url => url.includes(this.prediction.id));
     //   console.log(url);
@@ -332,6 +354,14 @@ export default {
     // },
     updateClass(menuItem) {
       this.prediction.class = menuItem.class;
+      this.prediction.orderId = this.orderId;
+      this.prediction.price = menuItem.price;
+      this.prediction.weight = this.getRandomWeight();
+      this.prediction.weightedPrice =
+        this.prediction.price * this.prediction.weight;
+      this.prediction.created = new Date();
+      this.prediction.id = this.getUID();
+      this.prediction.imageURL = this.prediction.imageURL || menuItem.imageURL;
       this.addPredictionToOrder();
     },
     addPredictionToOrder() {
@@ -419,13 +449,13 @@ export default {
       this.model = 1;
       this.state = "init";
     },
+    getRandomWeight() {
+      return Math.random() * (1000).toString().substr(0, 5);
+    },
     getUID() {
-      return (
-        "_" +
-        Math.random()
-          .toString(36)
-          .substr(2, 9)
-      );
+      return Math.random()
+        .toString(36)
+        .substr(2, 10);
     },
     initPrediction() {
       return {
@@ -440,7 +470,7 @@ export default {
     getTotalSum() {
       if (this.itemsInCurrentOrder.length) {
         return this.itemsInCurrentOrder
-          .map(item => item.price)
+          .map(item => item.weightedPrice)
           .reduce((prev, next) => prev + next);
       } else return 0;
     }
@@ -481,14 +511,16 @@ export default {
   overflow-y: auto;
 }
 
-iframe {
+#camera-stream,
+#prediction-image {
   width: 755px;
   height: 424px;
+  align-content: center;
+  justify-content: center;
   max-width: 100%;
-  max-height: calc((100% - 40px) / (16 / 9));
 }
-
-iframe html body {
-  overflow: hidden;
+#prediction-image.error {
+  background-color: red;
+  opacity: 0.15;
 }
 </style>

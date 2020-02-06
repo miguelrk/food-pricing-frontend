@@ -25,41 +25,41 @@ export default new Vuex.Store({
       {
         id: "3",
         class: "Dessert",
-        price: 3.89,
+        price: 2.89,
         imageURL:
           "https://assets3.thrillist.com/v1/image/1656852/size/tmg-article_default_mobile.jpg"
       },
       {
         id: "4",
         class: "Egg",
-        price: 3.89,
+        price: 1.13,
         imageURL:
           "https://media.istockphoto.com/vectors/fried-egg-on-a-plate-vector-illustration-vector-id496774322"
       },
       {
         id: "5",
         class: "Fried food",
-        price: 3.89,
+        price: 4.89,
         imageURL: "https://s3.envato.com/files/250840577/39618_.jpg"
       },
       {
         id: "6",
         class: "Meat",
-        price: 3.89,
+        price: 5.92,
         imageURL:
           "http://images.utensilholder.org/l-m/sizzling-platter-steak-plate-set.jpg"
       },
       {
         id: "7",
         class: "Noodles/Pasta",
-        price: 3.89,
+        price: 4.36,
         imageURL:
           "https://previews.123rf.com/images/nataliaspb/nataliaspb1301/nataliaspb130100045/17317603-spaghetti-bolognese-on-the-white-plate-on-white-background.jpg"
       },
       {
         id: "8",
         class: "Rice",
-        price: 3.89,
+        price: 2.18,
         imageURL:
           "https://previews.123rf.com/images/sommai/sommai1501/sommai150100064/35054583-cooked-rice-in-a-white-plate-on-white-background.jpg"
       },
@@ -73,14 +73,14 @@ export default new Vuex.Store({
       {
         id: "10",
         class: "Soup",
-        price: 3.89,
+        price: 2.17,
         imageURL:
           "https://www.bbcgoodfood.com/sites/default/files/recipe-collections/collection-image/2013/05/recipe-image-legacy-id-1074500_11.jpg"
       },
       {
         id: "11",
         class: "Vegetable/Fruit",
-        price: 3.89,
+        price: 2.9,
         imageURL:
           "https://previews.123rf.com/images/margouillat/margouillat1308/margouillat130800444/21698479-plate-of-vegetables.jpg"
       }

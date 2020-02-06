@@ -3,16 +3,16 @@
     <v-toolbar transparent flat>
       <v-spacer></v-spacer>
       <v-toolbar-items v-if="Boolean(selected.length)">
-        <v-btn text icon @click.stop="cloneItems(selected)">
+        <!-- <v-btn text icon @click.stop="cloneItems(selected)">
           <v-icon>mdi-content-copy</v-icon>
-        </v-btn>
+        </v-btn>-->
         <v-btn text icon @click.stop="deleteItems(selected)">
           <v-icon>mdi-delete</v-icon>
         </v-btn>
       </v-toolbar-items>
     </v-toolbar>
-    <template v-if="order || itemsInCurrentOrder.length">
-      <template v-for="(item, i) in order || itemsInCurrentOrder">
+    <template v-if="orders.length">
+      <template v-for="(item, i) in orders">
         <v-list-item
           class="app-list-row"
           :class="{
@@ -20,7 +20,7 @@
             'app-list-row__active': $route.params.id === item.id
           }"
           :key="`v-list-item-${i}`"
-          @click.stop="addOrRemove(item)"
+          @click.stop="openDetails(item)"
         >
           <v-list-item-avatar>
             <template v-if="isSelected(item.id)">
@@ -36,6 +36,7 @@
             <template v-else>
               <v-avatar class="list-avatar" size="40px" @click.stop="addOrRemove(item)">
                 <img :src="`https://picsum.photos/500/300?image=${i}`" :alt="item.id" />
+                <!-- <img :src="getImageURL(filenames[i])" :alt="item.id" /> -->
               </v-avatar>
             </template>
           </v-list-item-avatar>
@@ -50,7 +51,7 @@
             <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">${{ item.price }}</v-col>
           </v-row>
 
-          <v-list-item-action class="app-list-actions justify-center">
+          <!-- <v-list-item-action class="app-list-actions justify-center">
             <v-row>
               <v-btn text icon>
                 <v-icon>mdi-content-copy</v-icon>
@@ -59,7 +60,7 @@
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-row>
-          </v-list-item-action>
+          </v-list-item-action>-->
         </v-list-item>
         <v-divider :key="`v-divider-${i}`"></v-divider>
       </template>
@@ -88,27 +89,24 @@
     </template>
 
     <!-- DIALOG TO CONFIRM DELETE -->
-    <v-dialog
-      v-model="deleteDialog"
-      persistent
-      :max-width="$vuetify.breakpoint.xsAndDown ? 290 : 500"
-    >
-      <v-card v-if="selected.length">
+    <v-dialog v-model="deleteDialog" :max-width="1250">
+      <v-card>
         <v-card-title class="headline">
-          {{
-          `Are you sure you want to delete ${
-          selected.length === 1
-          ? " " + selected[0].class
-          : `${selected.length} items`
-          }?`
-          }}
+          Order details
+          <v-spacer></v-spacer>
+          <v-btn icon text @click="deleteDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
         </v-card-title>
-        <v-card-text>This action is irreversible. All settings will be lost.</v-card-text>
-        <v-card-actions>
+
+        <v-card-text>
+          <items-list :order="selectedOrder"></items-list>
+        </v-card-text>
+        <!-- <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="deleteDialog = false">Cancel</v-btn>
           <v-btn color="error" text @click="deleteItems(selected)">Delete</v-btn>
-        </v-card-actions>
+        </v-card-actions>-->
       </v-card>
     </v-dialog>
   </v-list>
@@ -120,12 +118,9 @@ import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
 import { storage } from "@/firebase.js";
 
 export default {
-  name: "ItemsList",
-  props: {
-    order: {
-      type: Object,
-      default: null
-    }
+  name: "OrdersList",
+  components: {
+    ItemsList: () => import("@/components/ItemsList.vue")
   },
   mixins: [DatabaseMixin],
   data() {
@@ -137,7 +132,8 @@ export default {
         { text: "Class", align: "left", sortable: true, value: "class" },
         { text: "ID", align: "left", sortable: true, value: "id" }
       ],
-      deleteDialog: false
+      deleteDialog: false,
+      selectedOrder: null
     };
   },
   computed: {
@@ -222,9 +218,7 @@ export default {
     },
     deleteItem(item) {
       console.log(item);
-      this.itemsInCurrentOrder = this.itemsInCurrentOrder.filter(
-        itemInOrder => itemInOrder !== item
-      );
+      this.deleteDocById(this.$firestoreRefs.orders, item.id);
       this.deleteDialog = false;
       this.selected = [];
     },
@@ -238,6 +232,10 @@ export default {
           .toString(36)
           .substr(2, 9)
       );
+    },
+    openDetails(order) {
+      this.deleteDialog = true;
+      this.selectedOrder = order;
     }
   }
 };
@@ -252,7 +250,6 @@ export default {
   /* selected row: */
   background-color: rgb(0, 0, 0, 0.05); /* shade row if selected */
 }
-
 .list-avatar {
   border-radius: 7px !important;
 }

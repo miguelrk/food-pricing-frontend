@@ -7,10 +7,11 @@ export default {
   },
   methods: {
     toggleFullscreen() {
-      // let el = document.documentElement; // makes whole app fullscreen
-      let el = document.getElementById("dashboard"); // makes Dashboard fullscreen
+      let el = document.documentElement; // makes whole app fullscreen
+      // let el = document.querySelector(".app-view"); // makes view fullscreen
       if (!this.fullscreen) {
         this.fullscreen = true;
+        el.style.padding = "0px";
         if (el.requestFullscreen) {
           el.requestFullscreen();
         } else if (el.msRequestFullscreen) {
@@ -22,6 +23,7 @@ export default {
         }
       } else {
         this.fullscreen = false;
+        el.style.padding = "24px 96px";
         if (document.exitFullscreen) {
           document.exitFullscreen();
         } else if (document.webkitExitFullscreen) {

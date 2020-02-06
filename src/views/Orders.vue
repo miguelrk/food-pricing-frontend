@@ -1,7 +1,7 @@
 <template>
   <div class="app-view">
     <h1 class="hidden-md-and-down">Orders</h1>
-    <order-list></order-list>
+    <orders-list></orders-list>
   </div>
 </template>
 
@@ -12,7 +12,7 @@ import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
 export default {
   name: "Orders",
   components: {
-    OrderList: () => import("@/components/OrderList.vue")
+    OrdersList: () => import("@/components/OrdersList.vue")
   },
   mixins: [DatabaseMixin],
   computed: {
