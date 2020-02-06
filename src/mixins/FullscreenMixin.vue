@@ -7,9 +7,11 @@ export default {
   },
   methods: {
     toggleFullscreen() {
+      document.querySelector(".v-app-bar").style.display = "none";
       let el = document.documentElement; // makes whole app fullscreen
       // let el = document.querySelector(".app-view"); // makes view fullscreen
       if (!this.fullscreen) {
+        document.querySelector(".v-app-bar").style.display = "none";
         this.fullscreen = true;
         el.style.padding = "0px";
         if (el.requestFullscreen) {
@@ -22,6 +24,8 @@ export default {
           el.webkitRequestFullscreen();
         }
       } else {
+        location.reload();
+        document.querySelector(".v-app-bar").style.display = "block";
         this.fullscreen = false;
         el.style.padding = "24px 96px";
         if (document.exitFullscreen) {

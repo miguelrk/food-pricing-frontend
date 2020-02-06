@@ -5,7 +5,7 @@
       <v-row align="center" dense>
         <!-- GRID VIEW FOR LARGE SCREENS -->
         <v-col
-          v-for="(item, i) in menuItems"
+          v-for="(item, i) in predictions"
           :key="`v-col-${i}`"
           :cols="
             $vuetify.breakpoint.smAndDown
@@ -21,7 +21,7 @@
             <v-list-item>
               <v-list-item-content>
                 <v-list-item-title>
-                  <span class="font-weight-bold">{{ item.id }}</span>
+                  <span class="font-weight-bold">{{ item.class }}</span>
                 </v-list-item-title>
               </v-list-item-content>
               <v-list-item-action-text>{{ item.price }} EUR</v-list-item-action-text>
@@ -30,7 +30,7 @@
               <template #default="{ hover }">
                 <div class="pa-2">
                   <v-img
-                    :src="item.imageURL"
+                    :src="imageURLs[i]"
                     :alt="`${item.class}-${item.id}`"
                     height="194"
                     :key="`v-img-${i}`"
@@ -41,8 +41,8 @@
                           color="primary"
                           depressed
                           :key="`dialog-btn-${item.id}`"
-                          @click="openDialog(item)"
-                        >Edit item</v-btn>
+                          @click="openAlert(item)"
+                        >View Metadata</v-btn>
                       </v-overlay>
                     </v-fade-transition>
                   </v-img>
@@ -53,57 +53,6 @@
         </v-col>
       </v-row>
     </v-container>
-
-    <!-- DIALOG TO CONFIRM DELETE -->
-    <v-dialog
-      v-model="editDialog"
-      persistent
-      :max-width="$vuetify.breakpoint.xsAndDown ? 290 : 500"
-    >
-      <v-card v-if="itemToEdit">
-        <v-card-title class="headline">Menu item</v-card-title>
-        <v-card-text class="pa-5">
-          <v-subheader class="justify-center">Details</v-subheader>
-          <v-text-field
-            v-model="itemToEdit.class"
-            append-icon="mdi-label"
-            label="Class"
-            outlined
-            dense
-          ></v-text-field>
-          <v-text-field
-            v-model="itemToEdit.price"
-            append-icon="mdi-currency-usd"
-            label="Price (EUR/100g)"
-            required
-            outlined
-            dense
-            type="number"
-            prefix="$"
-          ></v-text-field>
-          <v-subheader class="justify-center">Image</v-subheader>
-          <v-text-field v-model="itemToEdit.imageURL" append-icon="mdi-link" outlined dense></v-text-field>
-          <v-file-input
-            v-model="file"
-            :prepend-icon="false"
-            append-icon="mdi-image"
-            placeholder="Select"
-            chips
-            outlined
-            dense
-          ></v-file-input>
-          <!-- <div id="dialog-image-container" class="justify-center">
-            <v-img id="dialog-image-preview" :src="itemToEdit.imageURL" />
-          </div>-->
-        </v-card-text>
-        <v-card-actions>
-          <v-btn color="error" text @click="deleteItems(selected)">Delete</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn text @click="editDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveItem(selected)">Save</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -117,10 +66,7 @@ export default {
   mixins: [DatabaseMixin],
   data() {
     return {
-      imageURLs: [],
-      editDialog: false,
-      itemToEdit: null,
-      file: null
+      imageURLs: []
     };
   },
   computed: {
@@ -136,10 +82,8 @@ export default {
     this.getImageUrls(predictionsRef);
   },
   methods: {
-    openDialog(item) {
-      this.editDialog = true;
-      this.itemToEdit = item;
-      this.alert(JSON.stringify(item, null, 4));
+    openAlert(item) {
+      alert(JSON.stringify(item, null, 4));
     },
     getImageUrls(folderRef) {
       folderRef
@@ -197,10 +141,5 @@ export default {
 .menu {
   height: 100%;
   width: 100%;
-}
-
-#dialog-image-preview {
-  width: 300px;
-  max-width: 100%;
 }
 </style>

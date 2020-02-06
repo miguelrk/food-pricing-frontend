@@ -3,16 +3,13 @@
     <v-toolbar transparent flat>
       <v-spacer></v-spacer>
       <v-toolbar-items v-if="Boolean(selected.length)">
-        <v-btn text icon @click.stop="cloneItems(selected)">
-          <v-icon>mdi-content-copy</v-icon>
-        </v-btn>
         <v-btn text icon @click.stop="deleteItems(selected)">
           <v-icon>mdi-delete</v-icon>
         </v-btn>
       </v-toolbar-items>
     </v-toolbar>
-    <template v-if="order || itemsInCurrentOrder.length">
-      <template v-for="(item, i) in order || itemsInCurrentOrder">
+    <template v-if="items.length">
+      <template v-for="(item, i) in items">
         <v-list-item
           class="app-list-row"
           :class="{
@@ -35,7 +32,7 @@
             </template>
             <template v-else>
               <v-avatar class="list-avatar" size="40px" @click.stop="addOrRemove(item)">
-                <img :src="`https://picsum.photos/500/300?image=${i}`" :alt="item.id" />
+                <img :src="item.imageURL" :alt="item.id" />
               </v-avatar>
             </template>
           </v-list-item-avatar>
@@ -43,18 +40,17 @@
           <v-row justify="space-between" align="center">
             <v-col>
               <span class="font-weight-bold">{{ item.class }}</span>
-              <v-list-item-subtitle v-if="$vuetify.breakpoint.mdAndUp">{{ item.id }}</v-list-item-subtitle>
-              <v-list-item-subtitle v-else>{{ item.price }}</v-list-item-subtitle>
+              <v-list-item-subtitle
+                v-if="$vuetify.breakpoint.mdAndUp"
+              >{{ Date(order.created).substr(0, 21)}}</v-list-item-subtitle>
+              <v-list-item-subtitle v-else>{{ item.weightedPrice }}</v-list-item-subtitle>
             </v-col>
             <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ item.weight }} g</v-col>
-            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">${{ item.price }}</v-col>
+            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">${{ item.weightedPrice }}</v-col>
           </v-row>
 
-          <v-list-item-action class="app-list-actions justify-center">
+          <v-list-item-action v-if="!order" class="app-list-actions justify-center">
             <v-row>
-              <v-btn text icon>
-                <v-icon>mdi-content-copy</v-icon>
-              </v-btn>
               <v-btn text icon @click.stop="deleteItem(item)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
@@ -124,7 +120,7 @@ export default {
   props: {
     order: {
       type: Object,
-      default: null
+      default: () => {}
     }
   },
   mixins: [DatabaseMixin],
@@ -157,7 +153,7 @@ export default {
       }
     },
     items() {
-      return this.predictions;
+      return this.order.items || this.itemsInCurrentOrder;
     },
     collectionRef() {
       return this.$firestoreRefs.predictions;
@@ -196,11 +192,15 @@ export default {
       return this.selected.find(d => d.id === id);
     },
     addOrRemove(item) {
-      var index = this.selected.indexOf(item);
-      if (index === -1) {
-        this.selected.push(item);
+      if (!this.order) {
+        var index = this.selected.indexOf(item);
+        if (index === -1) {
+          this.selected.push(item);
+        } else {
+          this.selected.splice(index, 1);
+        }
       } else {
-        this.selected.splice(index, 1);
+        alert(JSON.stringify(item, null, 2));
       }
     },
     cloneItems(selected) {

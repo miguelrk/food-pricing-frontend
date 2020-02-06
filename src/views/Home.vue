@@ -140,29 +140,20 @@
             <v-card-actions v-else>
               <v-btn text @click="reset()">Cancel</v-btn>
               <v-spacer></v-spacer>
-              <v-btn
-                text
-                outlined
-                color="primary"
-                @click="makePrediction()"
-                :disabled="state === 'inference'"
-              >
-                <v-icon left>mdi-camera</v-icon>Re-scan
-              </v-btn>
-              <v-btn
-                color="error"
-                @click="correctionDialog = true"
-                :disabled="state === 'inference'"
-              >
-                <v-icon left>mdi-close</v-icon>Wrong
-              </v-btn>
-              <v-btn
-                color="success"
-                @click="addPredictionToOrder()"
-                :disabled="state === 'inference'"
-              >
-                <v-icon left>mdi-check</v-icon>Right
-              </v-btn>
+              <template v-if="state !== 'inference'">
+                <v-btn text outlined color="primary" @click="makePrediction()">
+                  <v-icon left>mdi-camera</v-icon>Re-scan
+                </v-btn>
+                <v-btn v-if="failedToPredict" color="primary" @click="correctionDialog = true">
+                  <v-icon left>mdi-cursor-pointer</v-icon>Select
+                </v-btn>
+                <v-btn v-if="!failedToPredict" color="error" @click="correctionDialog = true">
+                  <v-icon left>mdi-close</v-icon>Wrong
+                </v-btn>
+                <v-btn v-if="!failedToPredict" color="success" @click="addPredictionToOrder()">
+                  <v-icon left>mdi-check</v-icon>Right
+                </v-btn>
+              </template>
             </v-card-actions>
           </v-card>
         </v-stepper-content>
@@ -220,16 +211,14 @@
                     :key="`p-${i}`"
                     justify-space-between
                   >
-                    <v-col>{{ item.class }}</v-col>
-                    <v-col style="text-align:right;">{{ item.price * item.weight }}</v-col>
+                    <v-col cols="7">{{ item.class }}</v-col>
+                    <v-col>{{ item.weight }}g</v-col>
+                    <v-col style="text-align:right;">$ {{ item.weightedPrice }}</v-col>
                   </v-row>
                   <br />
                   <v-divider></v-divider>
                   <p class="subheader text--primary strong" style="text-align:right;">TOTAL</p>
-                  <p
-                    class="display-1 text--primary"
-                    style="text-align:right;"
-                  >{{ getTotalSum() }} EUR</p>
+                  <p class="display-1 text--primary" style="text-align:right;">{{ totalPrice }} EUR</p>
                 </v-col>
               </v-row>
             </v-card-text>
@@ -237,7 +226,7 @@
               <v-btn text @click="reset()">Cancel</v-btn>
               <v-spacer></v-spacer>
               <v-btn text @click="goBackToFeedback()">Back</v-btn>
-              <v-btn color="primary" @click="model = 1">
+              <v-btn color="primary" @click="purchase()">
                 <v-icon left>mdi-credit-card-outline</v-icon>Purchase
               </v-btn>
             </v-card-actions>
@@ -246,6 +235,11 @@
         <!--------------------------------------------------------------------->
       </v-stepper-items>
     </v-stepper>
+    <v-overlay :value="overlayWhilePayment">
+      <v-row class="fill-height" column justify="center" align="center">
+        <v-progress-circular :size="50" color="secondary" indeterminate></v-progress-circular>
+      </v-row>
+    </v-overlay>
   </div>
 </template>
 
@@ -268,7 +262,7 @@ export default {
       correctionDialog: false,
       orderId: "",
       prediction: {
-        id: "",
+        id: this.getUID(),
         class: "",
         orderId: "",
         price: "",
@@ -276,7 +270,9 @@ export default {
         created: "",
         imageURL: ""
       },
-      predictionsRef: storage.ref("/predictions")
+      failedToPredict: false,
+      predictionsStorageRef: storage.ref("/predictions"),
+      overlayWhilePayment: false
     };
   },
   computed: {
@@ -284,11 +280,14 @@ export default {
       notifications: state => state.notifications,
       menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
-    })
+    }),
+    totalPrice() {
+      return this.getTotalSum();
+    }
   },
   mounted() {
     // Find all the prefixes and items.
-    this.getImageUrls(this.predictionsRef);
+    this.getImageUrls(this.predictionsStorageRef);
     this.orderId = this.getUID();
   },
   methods: {
@@ -303,13 +302,26 @@ export default {
 
       this.getPrediction(url)
         .then(data => {
-          this.prediction = data;
-          this.prediction.weightedPrice = data.weight * data.price;
-          console.log(this.prediction);
+          if (data) {
+            this.failedToPredict = false;
+            this.prediction = JSON.parse(JSON.stringify(data)); // copies object (not by reference)
+            this.prediction.orderId = this.orderId;
+            this.prediction.id = this.prediction.id || this.getUID();
+            this.prediction.imageURL = `${this.prediction.imageURL}.png`;
+            this.prediction.price = this.menuItems.find(
+              i => (i.class = data.class)
+            ).price;
+            const pricePerGram = this.prediction.price / 100; // since price is in EUR/100g
+            this.prediction.weightedPrice = (
+              pricePerGram * data.weight
+            ).toFixed(2);
+            this.prediction.created = Date.now();
+            console.log(this.prediction);
+            this.getImageURL(`${this.prediction.id}.png`);
+          } else this.failedToPredict = true;
         })
         .finally(() => {
           this.state = "feedback";
-          this.getImageURL(`${this.prediction.id}.png`);
         });
     },
     async getPrediction(url) {
@@ -324,14 +336,14 @@ export default {
       } catch (error) {
         console.error(error);
         this.$store.commit("FIRE_NOTIFICATION", {
-          text: error,
+          text: "Error: Failed to detect food item",
           type: "error"
         });
       }
     },
     getImageURL(filename) {
       console.log("GET image:", filename);
-      this.predictionsRef
+      this.predictionsStorageRef
         .child("0144b84e-f26f-447d-b834-39744383c67f.jpg")
         .getDownloadURL()
         .then(url => {
@@ -347,27 +359,26 @@ export default {
           return this.settings.cameraStreamHost;
         });
     },
-    // getImageURLOfPrediction(urls) {
-    //   const url = urls.find(url => url.includes(this.prediction.id));
-    //   console.log(url);
-    //   return url;
-    // },
     updateClass(menuItem) {
+      this.prediction = JSON.parse(JSON.stringify(this.prediction)); // copies object (not by reference)
       this.prediction.class = menuItem.class;
       this.prediction.orderId = this.orderId;
-      this.prediction.price = menuItem.price;
-      this.prediction.weight = this.getRandomWeight();
-      this.prediction.weightedPrice =
-        this.prediction.price * this.prediction.weight;
-      this.prediction.created = new Date();
-      this.prediction.id = this.getUID();
-      this.prediction.imageURL = this.prediction.imageURL || menuItem.imageURL;
-      this.addPredictionToOrder();
+      this.prediction.id = this.prediction.id || this.getUID();
+      this.prediction.imageURL = menuItem.imageURL;
+      this.prediction.price = menuItem.price.toFixed(2);
+      this.prediction.weight = this.getRandomWeightInGrams();
+      const pricePerGram = this.prediction.price / 100; // since price is in EUR/100g
+      this.prediction.weightedPrice = (
+        pricePerGram * this.prediction.weight
+      ).toFixed(2);
+      this.prediction.created = Date.now();
+      console.log(this.prediction);
+      this.addPredictionToOrder(this.prediction);
     },
-    addPredictionToOrder() {
+    addPredictionToOrder(data) {
       this.$store.commit("ADD", {
         prop: "itemsInCurrentOrder",
-        value: this.prediction
+        value: data
       });
       console.log("Added item to order:", this.prediction);
       this.model = 2;
@@ -431,11 +442,21 @@ export default {
       this.state = "feedback";
     },
     purchase() {
-      this.$store.commit("FIRE_NOTIFICATION", {
-        text: "Payment successful",
-        type: "success"
-      });
-      this.reset();
+      this.overlayWhilePayment = true;
+      setTimeout(() => {
+        this.overlayWhilePayment = false;
+        this.createDoc(this.$firestoreRefs.orders, {
+          id: this.orderId,
+          created: Date.now(),
+          price: this.totalPrice,
+          items: [...this.itemsInCurrentOrder]
+        });
+        this.$store.commit("FIRE_NOTIFICATION", {
+          text: "Payment successful",
+          type: "success"
+        });
+        this.reset();
+      }, 1500);
     },
     reset() {
       this.backToStart();
@@ -443,14 +464,15 @@ export default {
         prop: "itemsInCurrentOrder",
         value: []
       });
+      this.itemsInCurrentOrder = [];
       this.initPrediction();
     },
     backToStart() {
       this.model = 1;
       this.state = "init";
     },
-    getRandomWeight() {
-      return Math.random() * (1000).toString().substr(0, 5);
+    getRandomWeightInGrams() {
+      return (Math.random() * 1000).toFixed(0);
     },
     getUID() {
       return Math.random()
@@ -470,9 +492,10 @@ export default {
     getTotalSum() {
       if (this.itemsInCurrentOrder.length) {
         return this.itemsInCurrentOrder
-          .map(item => item.weightedPrice)
-          .reduce((prev, next) => prev + next);
-      } else return 0;
+          .map(item => Number(item.weightedPrice))
+          .reduce((prev, next) => prev + next)
+          .toFixed(2);
+      } else return 0.0;
     }
   }
 };

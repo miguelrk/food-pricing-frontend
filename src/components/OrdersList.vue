@@ -1,62 +1,45 @@
+/* eslint-disable prettier/prettier */
 <template>
   <v-list two-line class="pa-0">
     <v-toolbar transparent flat>
       <v-spacer></v-spacer>
       <v-toolbar-items v-if="Boolean(selected.length)">
-        <!-- <v-btn text icon @click.stop="cloneItems(selected)">
-          <v-icon>mdi-content-copy</v-icon>
-        </v-btn>-->
         <v-btn text icon @click.stop="deleteItems(selected)">
           <v-icon>mdi-delete</v-icon>
         </v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <template v-if="orders.length">
-      <template v-for="(item, i) in orders">
+      <template v-for="(order, i) in orders">
+        <v-list-item v-if="i === 0" class="app-list-row" :key="`v-list-item-header-${i}`">
+          <v-row justify="space-between" align="center">
+            <v-col class="text-left title mr-5 pr-5 hidden-sm-and-down">Timestamp</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">ID</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Total Price</v-col>
+          </v-row>
+        </v-list-item>
+
         <v-list-item
           class="app-list-row"
           :class="{
-            'app-list-row__selected': isSelected(item.id),
-            'app-list-row__active': $route.params.id === item.id
+            'app-list-row__selected': isSelected(order.id),
+            'app-list-row__active': $route.params.id === order.id
           }"
           :key="`v-list-item-${i}`"
-          @click.stop="openDetails(item)"
+          @click.stop="openDetails(order)"
         >
-          <v-list-item-avatar>
-            <template v-if="isSelected(item.id)">
-              <v-avatar
-                class="list-avatar list-avatar__selected"
-                size="40px"
-                color="accent"
-                @click.stop="addOrRemove(item)"
-              >
-                <v-icon color="white">mdi-check</v-icon>
-              </v-avatar>
-            </template>
-            <template v-else>
-              <v-avatar class="list-avatar" size="40px" @click.stop="addOrRemove(item)">
-                <img :src="`https://picsum.photos/500/300?image=${i}`" :alt="item.id" />
-                <!-- <img :src="getImageURL(filenames[i])" :alt="item.id" /> -->
-              </v-avatar>
-            </template>
-          </v-list-item-avatar>
-
           <v-row justify="space-between" align="center">
             <v-col>
-              <span class="font-weight-bold">{{ item.class }}</span>
-              <v-list-item-subtitle v-if="$vuetify.breakpoint.mdAndUp">{{ item.id }}</v-list-item-subtitle>
-              <v-list-item-subtitle v-else>{{ item.price }}</v-list-item-subtitle>
+              <span class="font-weight-bold">{{ order.class }}</span>
+              <v-list-item-subtitle>{{ Date(order.created).substr(0, 21) }}</v-list-item-subtitle>
             </v-col>
-            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ item.weight }} g</v-col>
-            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">${{ item.price }}</v-col>
+            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ order.id }} g</v-col>
+            <v-col class="text-right mr-5 pr-5">{{order.price}}</v-col>
           </v-row>
 
           <!-- <v-list-item-action class="app-list-actions justify-center">
             <v-row>
-              <v-btn text icon>
-                <v-icon>mdi-content-copy</v-icon>
-              </v-btn>
-              <v-btn text icon @click.stop="deleteItem(item)">
+              <v-btn text icon @click.stop="deleteItem(order)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-row>
@@ -89,22 +72,22 @@
     </template>
 
     <!-- DIALOG TO CONFIRM DELETE -->
-    <v-dialog v-model="deleteDialog" :max-width="1250">
+    <v-dialog v-model="detailsDialog" :max-width="1250">
       <v-card>
         <v-card-title class="headline">
           Order details
           <v-spacer></v-spacer>
-          <v-btn icon text @click="deleteDialog = false">
+          <v-btn icon text @click="closeDialog()">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
 
-        <v-card-text>
+        <v-card-text v-if="detailsDialog">
           <items-list :order="selectedOrder"></items-list>
         </v-card-text>
         <!-- <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn text @click="detailsDialog = false">Cancel</v-btn>
           <v-btn color="error" text @click="deleteItems(selected)">Delete</v-btn>
         </v-card-actions>-->
       </v-card>
@@ -115,7 +98,7 @@
 <script>
 import { mapState } from "vuex";
 import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
-import { storage } from "@/firebase.js";
+// import { storage } from "@/firebase.js";
 
 export default {
   name: "OrdersList",
@@ -129,10 +112,11 @@ export default {
       descending: false,
       sortBy: "class",
       headers: [
-        { text: "Class", align: "left", sortable: true, value: "class" },
-        { text: "ID", align: "left", sortable: true, value: "id" }
+        { text: "Timestamp", align: "left", sortable: true, value: "created" },
+        { text: "ID", align: "left", sortable: true, value: "id" },
+        { text: "Total Price", align: "left", sortable: true, value: "price" }
       ],
-      deleteDialog: false,
+      detailsDialog: false,
       selectedOrder: null
     };
   },
@@ -160,24 +144,24 @@ export default {
     }
   },
   methods: {
-    getImageURL(filename) {
-      //   console.log(filename);
-      // Create a reference with an initial file path and name
-      const imageRef = this.getImageRefByFilename(filename);
-      console.log(imageRef);
-      const url = this.getURLfromRef(imageRef);
-      //   console.log(url);
-      return url;
-    },
-    getImageRefByFilename(filename) {
-      const folderRef = storage.ref(`/predictions`);
-      folderRef.listAll().then(res => {
-        return res.itemsInCurrentOrder.find(itemRef => {
-          console.log(itemRef.name);
-          return itemRef.name.includes(filename);
-        });
-      });
-    },
+    // getImageURL(filename) {
+    //   //   console.log(filename);
+    //   // Create a reference with an initial file path and name
+    //   const imageRef = this.getImageRefByFilename(filename);
+    //   console.log(imageRef);
+    //   const url = this.getURLfromRef(imageRef);
+    //   //   console.log(url);
+    //   return url;
+    // },
+    // getImageRefByFilename(filename) {
+    //   const folderRef = storage.ref(`/predictions`);
+    //   folderRef.listAll().then(res => {
+    //     return res.find(itemRef => {
+    //       console.log(itemRef.name);
+    //       return itemRef.name.includes(filename);
+    //     });
+    //   });
+    // },
     getURLfromRef(ref) {
       ref
         .getDownloadURL()
@@ -219,11 +203,15 @@ export default {
     deleteItem(item) {
       console.log(item);
       this.deleteDocById(this.$firestoreRefs.orders, item.id);
-      this.deleteDialog = false;
+      this.detailsDialog = false;
       this.selected = [];
     },
     openDialog(type, data = null) {
       this.$store.commit("OPEN_DIALOG", { type: type, data: data });
+    },
+    closeDialog() {
+      this.detailsDialog = false;
+      this.selectedOrder = null;
     },
     getUID() {
       return (
@@ -234,8 +222,9 @@ export default {
       );
     },
     openDetails(order) {
-      this.deleteDialog = true;
+      console.log(order);
       this.selectedOrder = order;
+      this.detailsDialog = true;
     }
   }
 };
@@ -250,9 +239,7 @@ export default {
   /* selected row: */
   background-color: rgb(0, 0, 0, 0.05); /* shade row if selected */
 }
-.list-avatar {
-  border-radius: 7px !important;
-}
+
 .list-avatar:hover {
   cursor: pointer;
 }

@@ -29,6 +29,12 @@
             <v-icon>mdi-receipt</v-icon>
           </template>
         </v-tab>
+        <v-tab @click="$router.push('/results')">
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Results</template>
+          <template v-else>
+            <v-icon>mdi-menu</v-icon>
+          </template>
+        </v-tab>
         <v-tab @click="$router.push('/menu')">
           <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Menu</template>
           <template v-else>

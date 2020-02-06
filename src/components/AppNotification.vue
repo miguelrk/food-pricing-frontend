@@ -6,7 +6,7 @@
     :timeout="timeoutMs"
     :multi-line="multiLine"
     :vertical="vertical"
-    bottom
+    top
     right
     class="app-notification"
   >
@@ -16,8 +16,7 @@
       text
       :color="button.color"
       @click.capture="button.clickHandler()"
-      >{{ button.text }}</v-btn
-    >
+    >{{ button.text }}</v-btn>
   </v-snackbar>
 </template>
 
@@ -35,7 +34,7 @@ export default {
   },
   data() {
     return {
-      model: false,
+      model: true,
       text: "",
       type: "",
       button: {},
@@ -103,7 +102,8 @@ export default {
 
       // Set default options:
       const maxCount = 4;
-      this.style = `margin-bottom:${54 + 54 * ((i % maxCount) - 1)}px`; // offsets notifications in a stack of maxCount
+      this.style = `top: 64px`;
+      this.style = `margin-top:${54 + 54 * ((i % maxCount) - 1)}px`; // offsets notifications in a stack of maxCount
       this.setNotificationTheme(type);
 
       // Set custom options:
@@ -165,3 +165,10 @@ export default {
   }
 };
 </script>
+
+<style>
+.app-notification {
+  position: absolute !important;
+  top: 80px !important;
+}
+</style>
