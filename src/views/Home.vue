@@ -19,19 +19,11 @@
           <v-card flat class="mb-12">
             <!-- CAMERA STREAM -->
             <template v-if="state === 'init'">
-              <v-card-title>
-                <!-- <v-icon left large>mdi-food</v-icon> -->
-                Scan your food
-              </v-card-title>
+              <v-card-title>Scan your food</v-card-title>
               <v-card-subtitle>Place food item below camera and wait to be scanned</v-card-subtitle>
               <v-card-text>
                 <v-row justify="center" align="center" class="fill-height">
-                  <!-- <v-img
-                    src="https://miro.medium.com/max/1280/1*3lAxV0t43t9KFf0q4EJXNA.gif"
-                    contain
-                    height="400px"
-                  ></v-img>-->
-                  <img id="camera-stream" :src="settings.cameraStreamHost" />
+                  <img id="camera-stream" :src="streamURL" />
                 </v-row>
               </v-card-text>
             </template>
@@ -56,7 +48,13 @@
                 <v-card-title>
                   <!-- <v-icon left large>mdi-check</v-icon> -->
                   Is the food item correct?
+                  <v-spacer></v-spacer>
+                  <v-card-title>
+                    <!-- <v-icon left large>mdi-check</v-icon> -->
+                    {{prediction.class}}
+                  </v-card-title>
                 </v-card-title>
+
                 <v-card-subtitle>
                   Your feedback helps us improve our
                   algorithms
@@ -150,7 +148,11 @@
                 <v-btn v-if="!failedToPredict" color="error" @click="correctionDialog = true">
                   <v-icon left>mdi-close</v-icon>Wrong
                 </v-btn>
-                <v-btn v-if="!failedToPredict" color="success" @click="addPredictionToOrder()">
+                <v-btn
+                  v-if="!failedToPredict"
+                  color="success"
+                  @click="addPredictionToOrder(prediction)"
+                >
                   <v-icon left>mdi-check</v-icon>Right
                 </v-btn>
               </template>
@@ -200,7 +202,7 @@
                   <v-img
                     width="300"
                     contain
-                    src="https://upload.wikimedia.org/wikipedia/commons/5/57/Paypa.png"
+                    src="https://upload.wikimedia.org/wikipedia/commons/5/57/Paypa.jpg"
                   ></v-img>
                   <br />
                   <div class="text--primary">Enjoy your meal!</div>
@@ -248,6 +250,8 @@ import { mapState } from "vuex";
 import DatabaseMixin from "@/mixins/DatabaseMixin.vue";
 import { storage } from "@/firebase.js";
 
+import axios from "axios";
+
 export default {
   name: "home",
   components: {
@@ -278,11 +282,18 @@ export default {
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      menuItems: state => state.menuItems,
+      // menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     }),
     totalPrice() {
       return this.getTotalSum();
+    },
+    streamURL() {
+      // to prevent overloading  backend with video stream + inference (during inference)
+      if (this.state === "init") {
+        return this.settings.cameraStreamURL;
+      } else
+        return "https://miro.medium.com/max/1280/1*3lAxV0t43t9KFf0q4EJXNA.gif";
     }
   },
   mounted() {
@@ -292,47 +303,52 @@ export default {
   },
   methods: {
     makePrediction() {
+      console.log(`Stopping camera stream (3s)...`);
       this.state = "inference";
+      setTimeout(() => {
+        console.log(`Getting prediction...`);
+        const url = `${this.settings.backendURL}`;
+
+        console.log(`GET ${this.settings.backendURL}`);
+
+        this.getPrediction(url)
+          .then(data => {
+            if (data) {
+              console.log("Results:", data);
+              this.failedToPredict = false;
+              // this.prediction = JSON.parse(JSON.stringify(data)); // copies object (not by reference)
+              this.prediction.orderId = this.orderId;
+              this.prediction.id = data.id;
+              this.prediction.imageURL = data.imageURL;
+              this.prediction.class = data.label;
+              this.prediction.price = this.menuItems.find(
+                i => (i.class = data.label)
+              ).price;
+              const pricePerGram = this.prediction.price / 100; // since price is in EUR/100g
+              this.prediction.weightedPrice = (
+                pricePerGram * data.weight
+              ).toFixed(2);
+              this.prediction.created = Date.now();
+              console.log(this.prediction);
+              this.getImageURL(`${this.prediction.id}.jpg`);
+            } else this.failedToPredict = true;
+          })
+          .finally(() => {
+            this.state = "feedback";
+          });
+      }, 10);
       this.correctionDialog = false;
-
-      const url = `${this.settings.deviceHost}/predict`;
-
-      console.log(`Getting prediction...`);
-      console.log(`GET ${this.settings.deviceHost}/predict`);
-
-      this.getPrediction(url)
-        .then(data => {
-          if (data) {
-            this.failedToPredict = false;
-            this.prediction = JSON.parse(JSON.stringify(data)); // copies object (not by reference)
-            this.prediction.orderId = this.orderId;
-            this.prediction.id = this.prediction.id || this.getUID();
-            this.prediction.imageURL = `${this.prediction.imageURL}.png`;
-            this.prediction.price = this.menuItems.find(
-              i => (i.class = data.class)
-            ).price;
-            const pricePerGram = this.prediction.price / 100; // since price is in EUR/100g
-            this.prediction.weightedPrice = (
-              pricePerGram * data.weight
-            ).toFixed(2);
-            this.prediction.created = Date.now();
-            console.log(this.prediction);
-            this.getImageURL(`${this.prediction.id}.png`);
-          } else this.failedToPredict = true;
-        })
-        .finally(() => {
-          this.state = "feedback";
-        });
     },
     async getPrediction(url) {
       try {
-        let response = await fetch(url, {
+        let response = await axios(url, {
+          method: "GET",
           mode: "no-cors",
           headers: {
             "Access-Control-Allow-Origin": "*"
           }
         });
-        return response.json();
+        return response.data;
       } catch (error) {
         console.error(error);
         this.$store.commit("FIRE_NOTIFICATION", {
@@ -344,7 +360,7 @@ export default {
     getImageURL(filename) {
       console.log("GET image:", filename);
       this.predictionsStorageRef
-        .child("0144b84e-f26f-447d-b834-39744383c67f.jpg")
+        .child(filename)
         .getDownloadURL()
         .then(url => {
           this.prediction.imageURL = url;
@@ -355,12 +371,12 @@ export default {
           console.error(error);
           document.getElementById(
             "prediction-image"
-          ).src = this.settings.cameraStreamHost;
-          return this.settings.cameraStreamHost;
+          ).src = this.settings.cameraStreamURL;
+          return this.settings.cameraStreamURL;
         });
     },
     updateClass(menuItem) {
-      this.prediction = JSON.parse(JSON.stringify(this.prediction)); // copies object (not by reference)
+      this.prediction = this.initPrediction();
       this.prediction.class = menuItem.class;
       this.prediction.orderId = this.orderId;
       this.prediction.id = this.prediction.id || this.getUID();
@@ -441,6 +457,17 @@ export default {
       this.model = 2;
       this.state = "feedback";
     },
+    initPrediction() {
+      return {
+        id: this.getUID(),
+        class: "",
+        orderId: "",
+        price: "",
+        weight: "",
+        created: "",
+        imageURL: ""
+      };
+    },
     purchase() {
       this.overlayWhilePayment = true;
       setTimeout(() => {
@@ -464,7 +491,6 @@ export default {
         prop: "itemsInCurrentOrder",
         value: []
       });
-      this.itemsInCurrentOrder = [];
       this.initPrediction();
     },
     backToStart() {
@@ -479,22 +505,15 @@ export default {
         .toString(36)
         .substr(2, 10);
     },
-    initPrediction() {
-      return {
-        id: "",
-        class: "",
-        orderId: "",
-        price: "",
-        weight: "",
-        created: ""
-      };
-    },
     getTotalSum() {
       if (this.itemsInCurrentOrder.length) {
-        return this.itemsInCurrentOrder
-          .map(item => Number(item.weightedPrice))
-          .reduce((prev, next) => prev + next)
-          .toFixed(2);
+        const prices = this.itemsInCurrentOrder.map(item =>
+          Number(item.weightedPrice)
+        );
+        console.log(prices);
+        const sum = prices.reduce((prev, next) => prev + next);
+        console.log(sum);
+        return sum.toFixed(2);
       } else return 0.0;
     }
   }
@@ -529,8 +548,10 @@ export default {
 .v-stepper__wrapper .v-card__text {
   /* minus v-card-title height and v-card-actions height */
   height: calc(100% - 48px - 38px - 52px - 16px);
-  padding: 16px !important; /* overrides .v-card__title + .v-card__text { padding-top: 0px; } */
-  margin-bottom: 16px !important; /* spaces v-list-action buttons */
+  padding: 16px !important;
+  /* overrides .v-card__title + .v-card__text { padding-top: 0px; } */
+  margin-bottom: 16px !important;
+  /* spaces v-list-action buttons */
   overflow-y: auto;
 }
 
@@ -542,6 +563,7 @@ export default {
   justify-content: center;
   max-width: 100%;
 }
+
 #prediction-image.error {
   background-color: red;
   opacity: 0.15;

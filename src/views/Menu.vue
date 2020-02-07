@@ -1,7 +1,21 @@
 <template>
   <div class="app-view">
-    <h1 class="hidden-md-and-down">Menu</h1>
-    <v-container fluid>
+    <v-row fluid class="align-center">
+      <h1 class="hidden-md-and-down">Menu</h1>
+      <v-spacer></v-spacer>
+      <v-btn
+        class="justify-end"
+        right
+        floating
+        outlined
+        color="secondary"
+        @click="openCreateDialog(newMenuItem)"
+      >
+        <v-icon left>mdi-plus</v-icon>Add
+      </v-btn>
+    </v-row>
+
+    <v-container fluid class="app-grid-container">
       <v-row align="center" dense>
         <!-- GRID VIEW FOR LARGE SCREENS -->
         <v-col
@@ -21,7 +35,7 @@
             <v-list-item>
               <v-list-item-content>
                 <v-list-item-title>
-                  <span class="font-weight-bold">{{ item.id }}</span>
+                  <span class="font-weight-bold">{{ item.class }}</span>
                 </v-list-item-title>
               </v-list-item-content>
               <v-list-item-action-text>{{ item.price }} EUR</v-list-item-action-text>
@@ -41,7 +55,7 @@
                           color="primary"
                           depressed
                           :key="`dialog-btn-${item.id}`"
-                          @click="openDialog(item)"
+                          @click="openUpdateDialog(item)"
                         >Edit item</v-btn>
                       </v-overlay>
                     </v-fade-transition>
@@ -63,7 +77,7 @@
       <v-card v-if="itemToEdit">
         <v-card-title class="headline">Menu item</v-card-title>
         <v-card-text class="pa-5">
-          <v-subheader class="justify-center">Details</v-subheader>
+          <!-- <v-subheader class="justify-center">Details</v-subheader> -->
           <v-text-field
             v-model="itemToEdit.class"
             append-icon="mdi-label"
@@ -81,26 +95,25 @@
             type="number"
             prefix="$"
           ></v-text-field>
-          <v-subheader class="justify-center">Image</v-subheader>
-          <v-text-field v-model="itemToEdit.imageURL" append-icon="mdi-link" outlined dense></v-text-field>
-          <v-file-input
-            v-model="file"
-            :prepend-icon="false"
-            append-icon="mdi-image"
-            placeholder="Select"
-            chips
+          <!-- <v-subheader class="justify-center">Image</v-subheader> -->
+          <v-text-field
+            v-model="itemToEdit.imageURL"
+            append-icon="mdi-link"
+            label="image URL"
             outlined
             dense
-          ></v-file-input>
-          <!-- <div id="dialog-image-container" class="justify-center">
-            <v-img id="dialog-image-preview" :src="itemToEdit.imageURL" />
-          </div>-->
+          ></v-text-field>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="error" text @click="deleteItems(selected)">Delete</v-btn>
+          <v-btn color="error" text @click="remove(itemToEdit)">Delete</v-btn>
           <v-spacer></v-spacer>
           <v-btn text @click="editDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveItem(selected)">Save</v-btn>
+          <v-btn v-if="dialogType === 'update'" color="primary" @click="update(itemToEdit)">Save</v-btn>
+          <v-btn
+            v-else-if="dialogType === 'create'"
+            color="primary"
+            @click="create(itemToEdit)"
+          >Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -118,15 +131,22 @@ export default {
   data() {
     return {
       imageURLs: [],
+      dialogType: "update",
       editDialog: false,
       itemToEdit: null,
-      file: null
+      file: null,
+      newMenuItem: {
+        id: "",
+        class: "",
+        price: "",
+        imageURL: ""
+      }
     };
   },
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      menuItems: state => state.menuItems,
+      // // menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
   },
@@ -136,10 +156,17 @@ export default {
     this.getImageUrls(predictionsRef);
   },
   methods: {
-    openDialog(item) {
-      this.editDialog = true;
+    openCreateDialog(item) {
+      console.log(item);
       this.itemToEdit = item;
-      this.alert(JSON.stringify(item, null, 4));
+      this.dialogType = "create";
+      this.editDialog = true;
+    },
+    openUpdateDialog(item) {
+      console.log(item);
+      this.itemToEdit = item;
+      this.dialogType = "update";
+      this.editDialog = true;
     },
     getImageUrls(folderRef) {
       folderRef
@@ -188,6 +215,18 @@ export default {
           console.error(error);
         })
         .finally(() => console.log(this.imageURLs));
+    },
+    create(item) {
+      this.createDoc(this.$firestoreRefs.menuItems, item);
+      this.editDialog = false;
+    },
+    update(item) {
+      this.updateDoc(this.$firestoreRefs.menuItems, item.id, item);
+      this.editDialog = false;
+    },
+    remove(item) {
+      this.deleteDocById(this.$firestoreRefs.menuItems, item.id, item);
+      this.editDialog = false;
     }
   }
 };

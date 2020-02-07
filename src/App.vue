@@ -11,9 +11,12 @@
 
       <v-spacer></v-spacer>
 
-      <v-tabs background-color="transparent" right>
+      <v-tabs background-color="transparent" right v-model="tab">
         <v-tab
-          @click="$router.push('/')"
+          key="tab-1"
+          to="/"
+          ripple
+          value="Home"
           :class="{
             'without-padding': $isMobile() || $vuetify.breakpoint.smAndDown
           }"
@@ -23,20 +26,20 @@
             <v-icon>mdi-home</v-icon>
           </template>
         </v-tab>
-        <v-tab @click="$router.push('/orders')">
+        <v-tab key="tab-2" to="/orders" ripple value="Orders">
           <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Orders</template>
           <template v-else>
             <v-icon>mdi-receipt</v-icon>
           </template>
         </v-tab>
-        <v-tab @click="$router.push('/results')">
-          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Results</template>
+        <v-tab key="tab-3" to="/menu" ripple value="Menu">
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Menu</template>
           <template v-else>
             <v-icon>mdi-menu</v-icon>
           </template>
         </v-tab>
-        <v-tab @click="$router.push('/menu')">
-          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Menu</template>
+        <v-tab key="tab-4" to="/results" ripple value="Results">
+          <template v-if="!$isMobile() || $vuetify.breakpoint.mdAndUp">Results</template>
           <template v-else>
             <v-icon>mdi-menu</v-icon>
           </template>
@@ -44,11 +47,7 @@
       </v-tabs>
 
       <v-btn icon @click="toggleFullscreen()">
-        <v-icon>
-          {{
-          fullscreen ? "mdi-fullscreen-exit" : "mdi-fullscreen"
-          }}
-        </v-icon>
+        <v-icon>{{ fullscreen ? "mdi-fullscreen-exit" : "mdi-fullscreen" }}</v-icon>
       </v-btn>
       <v-toolbar-items>
         <v-dialog v-model="dialog" width="500">
@@ -64,15 +63,15 @@
 
               <v-card-text>
                 <v-text-field
-                  v-model="deviceHostProvisional"
-                  label="Device Host"
+                  v-model="backendURLProvisional"
+                  label="Backend URL"
                   required
                   outlined
                   dense
                 ></v-text-field>
                 <v-text-field
-                  v-model="cameraStreamHostProvisional"
-                  label="Camera Stream Host"
+                  v-model="cameraStreamURLProvisional"
+                  label="Camera Stream URL"
                   required
                   outlined
                   dense
@@ -131,9 +130,10 @@ export default {
   mixins: [DatabaseMixin, FullscreenMixin],
   data() {
     return {
+      tab: this.$route.name,
       dialog: false,
-      deviceHostProvisional: "",
-      cameraStreamHostProvisional: ""
+      backendURLProvisional: "",
+      cameraStreamURLProvisional: ""
     };
   },
   computed: {
@@ -146,8 +146,8 @@ export default {
     settings: {
       immediate: true,
       handler(newVal) {
-        this.deviceHostProvisional = newVal.deviceHost;
-        this.cameraStreamHostProvisional = newVal.cameraStreamHost;
+        this.backendURLProvisional = newVal.backendURL;
+        this.cameraStreamURLProvisional = newVal.cameraStreamURL;
         console.log("Updated settings:", newVal);
       }
     },
@@ -176,8 +176,8 @@ export default {
       const collectionRefSettings = database.collection("settings");
 
       const data = {
-        deviceHost: this.deviceHostProvisional,
-        cameraStreamHost: this.cameraStreamHostProvisional
+        backendURL: this.backendURLProvisional,
+        cameraStreamURL: this.cameraStreamURLProvisional
       };
 
       this.updateDoc(collectionRefSettings, "PwmSaP1FUxeigoq4xKte", data);
@@ -193,7 +193,7 @@ body {
 }
 
 .app-view {
-  height: 100%;
+  height: calc(100vh - 64px) !important;
 }
 
 .app-view h1 {
@@ -212,6 +212,11 @@ body {
   padding-left: 6px;
   padding-right: 6px;
 }
+
+/* .app-grid-container {
+  height: calc(100vh - 64px - 100px) !important;
+  overflow: auto;
+} */
 
 /***************************custom scrollbar css********************************/
 

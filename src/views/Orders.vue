@@ -18,7 +18,7 @@ export default {
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      menuItems: state => state.menuItems,
+      // menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
   },

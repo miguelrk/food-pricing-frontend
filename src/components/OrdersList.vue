@@ -13,8 +13,9 @@
       <template v-for="(order, i) in orders">
         <v-list-item v-if="i === 0" class="app-list-row" :key="`v-list-item-header-${i}`">
           <v-row justify="space-between" align="center">
-            <v-col class="text-left title mr-5 pr-5 hidden-sm-and-down">Timestamp</v-col>
-            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">ID</v-col>
+            <v-col class="text-left title mr-5 pr-5 hidden-sm-and-down">Date</v-col>
+            <v-col class="text-center title mr-5 pr-5 hidden-sm-and-down">ID</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Items</v-col>
             <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Total Price</v-col>
           </v-row>
         </v-list-item>
@@ -33,7 +34,8 @@
               <span class="font-weight-bold">{{ order.class }}</span>
               <v-list-item-subtitle>{{ Date(order.created).substr(0, 21) }}</v-list-item-subtitle>
             </v-col>
-            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ order.id }} g</v-col>
+            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ order.id }}</v-col>
+            <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ order.items.length }}</v-col>
             <v-col class="text-right mr-5 pr-5">{{order.price}}</v-col>
           </v-row>
 
@@ -111,19 +113,14 @@ export default {
       selected: [],
       descending: false,
       sortBy: "class",
-      headers: [
-        { text: "Timestamp", align: "left", sortable: true, value: "created" },
-        { text: "ID", align: "left", sortable: true, value: "id" },
-        { text: "Total Price", align: "left", sortable: true, value: "price" }
-      ],
       detailsDialog: false,
       selectedOrder: null
     };
   },
   computed: {
     ...mapState({
-      notifications: state => state.notifications,
-      menuItems: state => state.menuItems
+      notifications: state => state.notifications
+      // menuItems: state => state.menuItems
     }),
     itemsInCurrentOrder: {
       get() {

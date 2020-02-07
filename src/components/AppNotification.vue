@@ -6,8 +6,8 @@
     :timeout="timeoutMs"
     :multi-line="multiLine"
     :vertical="vertical"
-    top
-    right
+    bottom
+    centered
     class="app-notification"
   >
     {{ text }}
@@ -167,8 +167,8 @@ export default {
 </script>
 
 <style>
-.app-notification {
+/* .app-notification {
   position: absolute !important;
   top: 80px !important;
-}
+} */
 </style>

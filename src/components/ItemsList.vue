@@ -10,6 +10,15 @@
     </v-toolbar>
     <template v-if="items.length">
       <template v-for="(item, i) in items">
+        <v-list-item v-if="i === 0" class="app-list-row" :key="`v-list-item-header-${i}`">
+          <v-row justify="space-between" align="center">
+            <v-col class="text-left title mr-5 pr-5 hidden-sm-and-down">Class</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Date</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Weight</v-col>
+            <v-col class="text-right title mr-5 pr-5 hidden-sm-and-down">Price</v-col>
+          </v-row>
+        </v-list-item>
+
         <v-list-item
           class="app-list-row"
           :class="{
@@ -40,11 +49,10 @@
           <v-row justify="space-between" align="center">
             <v-col>
               <span class="font-weight-bold">{{ item.class }}</span>
-              <v-list-item-subtitle
-                v-if="$vuetify.breakpoint.mdAndUp"
-              >{{ Date(order.created).substr(0, 21)}}</v-list-item-subtitle>
-              <v-list-item-subtitle v-else>{{ item.weightedPrice }}</v-list-item-subtitle>
             </v-col>
+            <v-col
+              class="text-right mr-5 pr-5 hidden-sm-and-down"
+            >{{ Date(item.created).substr(0, 21) }} g</v-col>
             <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">{{ item.weight }} g</v-col>
             <v-col class="text-right mr-5 pr-5 hidden-sm-and-down">${{ item.weightedPrice }}</v-col>
           </v-row>
@@ -129,17 +137,13 @@ export default {
       selected: [],
       descending: false,
       sortBy: "class",
-      headers: [
-        { text: "Class", align: "left", sortable: true, value: "class" },
-        { text: "ID", align: "left", sortable: true, value: "id" }
-      ],
       deleteDialog: false
     };
   },
   computed: {
     ...mapState({
-      notifications: state => state.notifications,
-      menuItems: state => state.menuItems
+      notifications: state => state.notifications
+      // menuItems: state => state.menuItems
     }),
     itemsInCurrentOrder: {
       get() {
@@ -153,7 +157,7 @@ export default {
       }
     },
     items() {
-      return this.order.items || this.itemsInCurrentOrder;
+      return this.order ? this.order.items : this.itemsInCurrentOrder;
     },
     collectionRef() {
       return this.$firestoreRefs.predictions;

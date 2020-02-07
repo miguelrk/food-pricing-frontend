@@ -1,7 +1,7 @@
 <template>
   <div class="app-view">
-    <h1 class="hidden-md-and-down">Menu</h1>
-    <v-container fluid>
+    <h1 class="hidden-md-and-down">Results</h1>
+    <v-container fluid class="app-grid-container">
       <v-row align="center" dense>
         <!-- GRID VIEW FOR LARGE SCREENS -->
         <v-col
@@ -21,7 +21,7 @@
             <v-list-item>
               <v-list-item-content>
                 <v-list-item-title>
-                  <span class="font-weight-bold">{{ item.class }}</span>
+                  <span class="font-weight-bold">{{ item.label }}</span>
                 </v-list-item-title>
               </v-list-item-content>
               <v-list-item-action-text>{{ item.price }} EUR</v-list-item-action-text>
@@ -72,7 +72,7 @@ export default {
   computed: {
     ...mapState({
       notifications: state => state.notifications,
-      menuItems: state => state.menuItems,
+      // menuItems: state => state.menuItems,
       itemsInCurrentOrder: state => state.itemsInCurrentOrder
     })
   },

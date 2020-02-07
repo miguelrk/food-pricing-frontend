@@ -8,6 +8,7 @@ export default {
       predictions: [],
       orders: [],
       purchases: [],
+      menuItems: [],
       settings: {}
     };
   },
@@ -16,12 +17,13 @@ export default {
     predictions: database.collection("predictions"),
     orders: database.collection("orders"),
     purchases: database.collection("purchases"),
+    menuItems: database.collection("menuItems"),
     settings: database.collection("settings").doc("PwmSaP1FUxeigoq4xKte")
   },
   methods: {
     ////////// Used by DashboardForm, GatewayForm, DatasourceForm, etc  //////////
     updateDoc(collectionRef, docId, data) {
-      const date = Date.now()();
+      const date = Date.now();
       collectionRef
         .doc(docId)
         .update({ ...data, updatedDate: date })
@@ -41,7 +43,7 @@ export default {
         });
     },
     createDoc(collectionRef, data) {
-      const date = Date.now()();
+      const date = Date.now();
       collectionRef
         .add(data) // Adds new document with a generated id
         .then(docRef => {
@@ -51,10 +53,10 @@ export default {
             updatedDate: date
           });
           window.console.log("Created item successfully");
-          // store.commit("FIRE_NOTIFICATION", {
-          //   text: "Created item successfully",
-          //   type: "success"
-          // });
+          store.commit("FIRE_NOTIFICATION", {
+            text: "Created item successfully",
+            type: "success"
+          });
         })
         .catch(error => {
           window.console.error(`Error adding item: ${error}`);
@@ -65,7 +67,7 @@ export default {
         });
     },
     cloneDoc(collectionRef, doc) {
-      const date = Date.now()();
+      const date = Date.now();
       collectionRef
         .add(doc) // Adds new document with a generated id
         .then(docRef => {
@@ -94,10 +96,10 @@ export default {
         .delete()
         .then(() => {
           window.console.log(`Deleted item successfully`);
-          // store.commit("FIRE_NOTIFICATION", {
-          //   text: `Deleted item successfully`,
-          //   type: "success"
-          // });
+          store.commit("FIRE_NOTIFICATION", {
+            text: `Deleted item successfully`,
+            type: "success"
+          });
         })
         .catch(error => {
           window.console.error(`Error deleting item: ${error}`);
@@ -109,7 +111,7 @@ export default {
     },
     ////////// Used by dashboard's DatasourceForm and ActionForm /////////////////
     updateDocField(documentRef, field, data) {
-      const date = Date.now()();
+      const date = Date.now();
       documentRef
         .update({ [field]: data, updatedDate: date })
         .then(() => {
