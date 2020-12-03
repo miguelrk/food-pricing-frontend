@@ -1,4 +1,6 @@
-# food-app
+# food-pricing-frontend
+
+A web application for automatic food recognition and pricing in cafeterias
 
 ## Project setup
 ```
