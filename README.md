@@ -1,6 +1,8 @@
 # food-pricing-frontend
 
-A web application for automatic food recognition and pricing in cafeterias
+A web application for automatic food recognition and pricing in cafeterias.
+
+A project for TUM Masterpraktikum: Edge Computing and the Internet of Things
 
 ## Project setup
 ```
